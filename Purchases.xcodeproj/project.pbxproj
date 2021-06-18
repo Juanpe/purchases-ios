@@ -107,12 +107,17 @@
 		352E88442229B1A70046A10A /* RCPurchasesErrorUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 352E88422229B1A60046A10A /* RCPurchasesErrorUtils.m */; };
 		353AB5E4222F624E003754E6 /* RCPurchasesErrors.h in Headers */ = {isa = PBXBuildFile; fileRef = 353AB5E3222F624E003754E6 /* RCPurchasesErrors.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		353AB5E6222F633D003754E6 /* RCPurchasesErrorUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 353AB5E5222F633D003754E6 /* RCPurchasesErrorUtils.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		354895D2267AE383001DC5B1 /* AttributionDataMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354895D1267AE383001DC5B1 /* AttributionDataMigrator.swift */; };
+		354895D4267AE4B4001DC5B1 /* AttributionKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354895D3267AE4B4001DC5B1 /* AttributionKey.swift */; };
+		354895D6267BEDE3001DC5B1 /* SpecialSubscriberAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354895D5267BEDE3001DC5B1 /* SpecialSubscriberAttributes.swift */; };
+		354895D8267D546F001DC5B1 /* AttributionNetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354895D7267D546F001DC5B1 /* AttributionNetwork.swift */; };
 		354D50DF22E7D014009B870C /* RCOfferings.h in Headers */ = {isa = PBXBuildFile; fileRef = 354D50DD22E7D014009B870C /* RCOfferings.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		354D50E022E7D014009B870C /* RCOfferings.m in Sources */ = {isa = PBXBuildFile; fileRef = 354D50DE22E7D014009B870C /* RCOfferings.m */; };
 		356D65F620B873AF00576D45 /* Purchases.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 352629FE1F7C4B9100C04F2C /* Purchases.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		3585D6A322E680E30079E2C5 /* RCPackage.h in Headers */ = {isa = PBXBuildFile; fileRef = 3585D6A122E680E30079E2C5 /* RCPackage.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		3585D6A422E680E30079E2C5 /* RCPackage.m in Sources */ = {isa = PBXBuildFile; fileRef = 3585D6A222E680E30079E2C5 /* RCPackage.m */; };
 		3589D15624C21DBD00A65CBB /* RCAttributionTypeFactory+Protected.h in Headers */ = {isa = PBXBuildFile; fileRef = 3589D15524C21DBD00A65CBB /* RCAttributionTypeFactory+Protected.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		35A8A3E72683F06B0019D303 /* AttributionDataMigratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35A8A3E62683F06B0019D303 /* AttributionDataMigratorTests.swift */; };
 		35B54E4622EA6F11005918B1 /* RCEntitlementInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 35B54E4522EA6F11005918B1 /* RCEntitlementInfo.m */; };
 		35B54E4822EA6F4E005918B1 /* RCEntitlementInfo.h in Headers */ = {isa = PBXBuildFile; fileRef = 35B54E4722EA6F4E005918B1 /* RCEntitlementInfo.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		35B54E4A22EA6FBD005918B1 /* RCEntitlementInfos.h in Headers */ = {isa = PBXBuildFile; fileRef = 35B54E4922EA6FBD005918B1 /* RCEntitlementInfos.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -393,6 +398,10 @@
 		3530C18822653E8F00D6DF52 /* AdSupport.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdSupport.framework; path = System/Library/Frameworks/AdSupport.framework; sourceTree = SDKROOT; };
 		353AB5E3222F624E003754E6 /* RCPurchasesErrors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RCPurchasesErrors.h; sourceTree = "<group>"; };
 		353AB5E5222F633D003754E6 /* RCPurchasesErrorUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RCPurchasesErrorUtils.h; sourceTree = "<group>"; };
+		354895D1267AE383001DC5B1 /* AttributionDataMigrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributionDataMigrator.swift; sourceTree = "<group>"; };
+		354895D3267AE4B4001DC5B1 /* AttributionKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributionKey.swift; sourceTree = "<group>"; };
+		354895D5267BEDE3001DC5B1 /* SpecialSubscriberAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialSubscriberAttributes.swift; sourceTree = "<group>"; };
+		354895D7267D546F001DC5B1 /* AttributionNetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributionNetwork.swift; sourceTree = "<group>"; };
 		354D50DD22E7D014009B870C /* RCOfferings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RCOfferings.h; sourceTree = "<group>"; };
 		354D50DE22E7D014009B870C /* RCOfferings.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RCOfferings.m; sourceTree = "<group>"; };
 		357C9BC022725CFA006BC624 /* iAd.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = iAd.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.2.sdk/System/Library/Frameworks/iAd.framework; sourceTree = DEVELOPER_DIR; };
@@ -401,6 +410,7 @@
 		3589D15524C21DBD00A65CBB /* RCAttributionTypeFactory+Protected.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RCAttributionTypeFactory+Protected.h"; sourceTree = "<group>"; };
 		3597020F24BF6A710010506E /* TransactionsFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionsFactory.swift; sourceTree = "<group>"; };
 		3597021124BF6AAC0010506E /* TransactionsFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionsFactoryTests.swift; sourceTree = "<group>"; };
+		35A8A3E62683F06B0019D303 /* AttributionDataMigratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributionDataMigratorTests.swift; sourceTree = "<group>"; };
 		35B54E4522EA6F11005918B1 /* RCEntitlementInfo.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RCEntitlementInfo.m; sourceTree = "<group>"; };
 		35B54E4722EA6F4E005918B1 /* RCEntitlementInfo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RCEntitlementInfo.h; sourceTree = "<group>"; };
 		35B54E4922EA6FBD005918B1 /* RCEntitlementInfos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RCEntitlementInfos.h; sourceTree = "<group>"; };
@@ -683,6 +693,7 @@
 		2DC5621724EC63420031F69B /* PurchasesCoreSwift */ = {
 			isa = PBXGroup;
 			children = (
+				354895D0267AE32D001DC5B1 /* SubscriberAttributes */,
 				2D11F5DE250FF63E005A70E8 /* Logging */,
 				2DDA3E4524DB0B4500EDFE5B /* Misc */,
 				354235D524C11138008C84EE /* Purchasing */,
@@ -698,6 +709,7 @@
 		2DC5622224EC63430031F69B /* PurchasesCoreSwiftTests */ = {
 			isa = PBXGroup;
 			children = (
+				35A8A3E52683F03D0019D303 /* SubscriberAttributes */,
 				2DDE559824C8B5D100DCB087 /* Resources */,
 				37E35A5970D1604E8C8011FC /* TestHelpers */,
 				2DDF41DD24F6F4F9005BC22D /* Mocks */,
@@ -972,6 +984,25 @@
 				37E351F0E21361EAEC078A0D /* ProductsManagerTests.swift */,
 			);
 			path = Purchasing;
+			sourceTree = "<group>";
+		};
+		354895D0267AE32D001DC5B1 /* SubscriberAttributes */ = {
+			isa = PBXGroup;
+			children = (
+				354895D1267AE383001DC5B1 /* AttributionDataMigrator.swift */,
+				354895D3267AE4B4001DC5B1 /* AttributionKey.swift */,
+				354895D5267BEDE3001DC5B1 /* SpecialSubscriberAttributes.swift */,
+				354895D7267D546F001DC5B1 /* AttributionNetwork.swift */,
+			);
+			path = SubscriberAttributes;
+			sourceTree = "<group>";
+		};
+		35A8A3E52683F03D0019D303 /* SubscriberAttributes */ = {
+			isa = PBXGroup;
+			children = (
+				35A8A3E62683F06B0019D303 /* AttributionDataMigratorTests.swift */,
+			);
+			path = SubscriberAttributes;
 			sourceTree = "<group>";
 		};
 		37E35081077192045E3A8080 /* Mocks */ = {
@@ -1529,8 +1560,8 @@
 			);
 			mainGroup = 352629F41F7C4B9100C04F2C;
 			packageReferences = (
-				B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble" */,
-				B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */,
+				B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble.git" */,
+				B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs.git" */,
 			);
 			productRefGroup = 352629FF1F7C4B9100C04F2C /* Products */;
 			projectDirPath = "";
@@ -1628,6 +1659,7 @@
 				9A65E0A52591A23500DE00B0 /* PurchaseStrings.swift in Sources */,
 				2DC5623024EC63730031F69B /* OperationDispatcher.swift in Sources */,
 				9A65E03625918B0500DE00B0 /* ConfigureStrings.swift in Sources */,
+				354895D6267BEDE3001DC5B1 /* SpecialSubscriberAttributes.swift in Sources */,
 				2D11F5E1250FF886005A70E8 /* AttributionStrings.swift in Sources */,
 				2DDF41B524F6F387005BC22D /* AppleReceiptBuilder.swift in Sources */,
 				2DDF41A324F6F331005BC22D /* ReceiptParser.swift in Sources */,
@@ -1648,10 +1680,13 @@
 				2DC5622E24EC636C0031F69B /* Transaction.swift in Sources */,
 				9A65E0AA2591A23800DE00B0 /* RestoreStrings.swift in Sources */,
 				2DDF41BC24F6F392005BC22D /* ArraySlice_UInt8+Extensions.swift in Sources */,
+				354895D4267AE4B4001DC5B1 /* AttributionKey.swift in Sources */,
 				9A65E0A02591A23200DE00B0 /* OfferingStrings.swift in Sources */,
 				2DDF41A224F6F331005BC22D /* ProductsManager.swift in Sources */,
 				2DDF41B324F6F387005BC22D /* InAppPurchaseBuilder.swift in Sources */,
 				9A65DFDE258AD60A00DE00B0 /* LogIntent.swift in Sources */,
+				354895D2267AE383001DC5B1 /* AttributionDataMigrator.swift in Sources */,
+				354895D8267D546F001DC5B1 /* AttributionNetwork.swift in Sources */,
 				37E35C8515C5E2D01B0AF5C1 /* Strings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1669,6 +1704,7 @@
 				2DDF41DB24F6F4DB005BC22D /* IntroEligibilityCalculatorTests.swift in Sources */,
 				2DDF41E124F6F527005BC22D /* MockReceiptParser.swift in Sources */,
 				2DDF41E224F6F527005BC22D /* MockProductsRequest.swift in Sources */,
+				35A8A3E72683F06B0019D303 /* AttributionDataMigratorTests.swift in Sources */,
 				2DDF41CC24F6F4C3005BC22D /* AppleReceiptBuilderTests.swift in Sources */,
 				2DDF41CD24F6F4C3005BC22D /* ASN1ContainerBuilderTests.swift in Sources */,
 				2DDF41DC24F6F4DB005BC22D /* ProductsManagerTests.swift in Sources */,
@@ -2388,7 +2424,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble" */ = {
+		B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble.git" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Quick/Nimble.git";
 			requirement = {
@@ -2396,7 +2432,7 @@
 				version = 9.2.0;
 			};
 		};
-		B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */ = {
+		B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs.git" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/AliSoftware/OHHTTPStubs.git";
 			requirement = {
@@ -2409,37 +2445,37 @@
 /* Begin XCSwiftPackageProductDependency section */
 		B3D5CFBC267282630056FA67 /* Nimble */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble" */;
+			package = B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble.git" */;
 			productName = Nimble;
 		};
 		B3D5CFBF267282760056FA67 /* OHHTTPStubsSwift */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
+			package = B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs.git" */;
 			productName = OHHTTPStubsSwift;
 		};
 		B3D5CFC1267282760056FA67 /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
+			package = B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs.git" */;
 			productName = OHHTTPStubs;
 		};
 		B3D5CFC32672827D0056FA67 /* Nimble */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble" */;
+			package = B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble.git" */;
 			productName = Nimble;
 		};
 		B3D5CFC52672827D0056FA67 /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
+			package = B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs.git" */;
 			productName = OHHTTPStubs;
 		};
 		B3D5CFC72672827D0056FA67 /* OHHTTPStubsSwift */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs" */;
+			package = B3D5CFBE267282760056FA67 /* XCRemoteSwiftPackageReference "OHHTTPStubs.git" */;
 			productName = OHHTTPStubsSwift;
 		};
 		B3D5CFC9267282860056FA67 /* Nimble */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble" */;
+			package = B3D5CFBB267282630056FA67 /* XCRemoteSwiftPackageReference "Nimble.git" */;
 			productName = Nimble;
 		};
 /* End XCSwiftPackageProductDependency section */
