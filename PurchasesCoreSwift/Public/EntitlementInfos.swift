@@ -27,7 +27,7 @@ import Foundation
     }
 
     @objc public init(entitlementsData: [String: Any]?,
-                      purchasesData: [String: Any],
+                      purchasesData: [String: [String: Any]],
                       dateFormatter: DateFormatter,
                       requestDate: Date?) {
         guard let entitlementsData = entitlementsData else {
@@ -46,7 +46,7 @@ import Foundation
             }
 
             let productData = purchasesData[productIdentifier]
-            guard let productData = productData as? [String: Any] else {
+            guard let productData = productData else {
                 return
             }
             entitlementInfos[identifier] = EntitlementInfo(entitlementId: identifier,
