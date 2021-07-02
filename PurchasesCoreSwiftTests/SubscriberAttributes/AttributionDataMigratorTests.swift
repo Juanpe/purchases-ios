@@ -6,10 +6,11 @@ import StoreKit
 
 class AttributionDataMigratorTests: XCTestCase {
 
-    static var defaultIdfa = "00000000-0000-0000-0000-000000000000"
-    static var defaultIdfv = "A9CFE78C-51F8-4808-94FD-56B4535753C6"
-    static var defaultIp = "192.168.1.130"
-    static var defaultGPSAdId = "e00000d0-0c0d-00b0-a000-acc0e00a0000"
+    static let defaultIdfa = "00000000-0000-0000-0000-000000000000"
+    static let defaultIdfv = "A9CFE78C-51F8-4808-94FD-56B4535753C6"
+    static let defaultIp = "192.168.1.130"
+    static let defaultNetworkId = "20f0c0000aca0b00000fb0000c0f0f00"
+    static let defaultRCNetworkId = "10f0c0000aca0b00000fb0000c0f0f00"
 
     var attributionDataMigrator: AttributionDataMigrator!
 
@@ -34,8 +35,16 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: adjustData, expectedMapping: expectedMapping)
     }
 
+    func testAdjustAttributionConversionDiscardsNSNullValues() {
+        let adjustData = adjustData(withIdfa: .nsNull, adjustId: .nsNull, networkID: .nsNull, idfv: .nsNull,
+                ip: .nsNull, campaign: .nsNull, adGroup: .nsNull, creative: .nsNull, network: .nsNull)
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: adjustData, network: AttributionNetwork.RCAttributionNetworkAdjust)
+        expect(converted.count) == 0
+    }
+
     func testAdjustAttributionConversionGivesPreferenceToAdIdOverRCNetworkID() {
-        let adjustData = adjustData(addAdId: true, addNetworkID: true)
+        let adjustData = adjustData(adjustId: .defaultValue, networkID: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: adjustData, network: AttributionNetwork.RCAttributionNetworkAdjust)
         expect(converted.count) != 0
@@ -50,52 +59,29 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: adjustData, expectedMapping: expectedMapping)
     }
 
-    func testAdjustAttributionConversionConvertsRCNetworkIDCorrectly() {
-        let adjustData = adjustData(addAdId: false, addNetworkID: true)
+    func testAdjustAttributionConversionRemovesNSNullRCNetworkID() {
+        let adjustData = adjustData(adjustId: .notPresent, networkID: .nsNull)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: adjustData, network: AttributionNetwork.RCAttributionNetworkAdjust)
         expect(converted.count) != 0
-        checkCommonAttributes(in: converted)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.adjustID: AttributionKey.networkID.rawValue,
-            SpecialSubscriberAttributes.mediaSource: AttributionKey.Adjust.network.rawValue,
-            SpecialSubscriberAttributes.campaign: AttributionKey.Adjust.campaign.rawValue,
-            SpecialSubscriberAttributes.adGroup: AttributionKey.Adjust.adGroup.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.Adjust.creative.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: adjustData, expectedMapping: expectedMapping)
+        expect(converted[SpecialSubscriberAttributes.adjustID]).to(beNil())
     }
 
-    func testAdjustAttributionConversionWorksWithNullIDFA() {
-        let adjustData = adjustData(withIDFA: nil)
+    func testAdjustAttributionConversionDiscardsRCNetworkIDCorrectly() {
+        let adjustData = adjustData(adjustId: .notPresent, networkID: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: adjustData, network: AttributionNetwork.RCAttributionNetworkAdjust)
         expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfa: nil)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.adjustID: AttributionKey.Adjust.id.rawValue,
-            SpecialSubscriberAttributes.mediaSource: AttributionKey.Adjust.network.rawValue,
-            SpecialSubscriberAttributes.campaign: AttributionKey.Adjust.campaign.rawValue,
-            SpecialSubscriberAttributes.adGroup: AttributionKey.Adjust.adGroup.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.Adjust.creative.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: adjustData, expectedMapping: expectedMapping)
+        expect(converted[SpecialSubscriberAttributes.adjustID]).to(beNil())
     }
 
-    func testAdjustAttributionConversionWorksWithNullIDFV() {
-        let adjustData = adjustData(idfv: nil)
+    func testAdjustAttributionConversionWorksIfStandardKeysAreNotPassed() {
+        let adjustData = adjustData(withIdfa: .notPresent, adjustId: .notPresent, networkID: .notPresent,
+                idfv: .notPresent, ip: .notPresent, campaign: .notPresent, adGroup: .notPresent, creative: .notPresent,
+                network: .notPresent)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: adjustData, network: AttributionNetwork.RCAttributionNetworkAdjust)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfv: nil)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.adjustID: AttributionKey.Adjust.id.rawValue,
-            SpecialSubscriberAttributes.mediaSource: AttributionKey.Adjust.network.rawValue,
-            SpecialSubscriberAttributes.campaign: AttributionKey.Adjust.campaign.rawValue,
-            SpecialSubscriberAttributes.adGroup: AttributionKey.Adjust.adGroup.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.Adjust.creative.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: adjustData, expectedMapping: expectedMapping)
+        expect(converted.count) == 0
     }
 
     func testAppsFlyerAttributionIsProperlyConverted() {
@@ -111,13 +97,22 @@ class AttributionDataMigratorTests: XCTestCase {
             SpecialSubscriberAttributes.adGroup: AttributionKey.AppsFlyer.adSet.rawValue,
             SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue,
             SpecialSubscriberAttributes.keyword: AttributionKey.AppsFlyer.adKeywords.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adID.rawValue
+            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adId.rawValue
         ]
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
+    func testAppsFlyerAttributionDiscardsNSNullValues() {
+        let appsFlyerData = appsFlyerData(withIDFA: .nsNull, appsFlyerId: .nsNull, networkID: .nsNull, idfv: .nsNull,
+                channel: .nsNull, mediaSource: .nsNull, ad: .nsNull, adGroup: .nsNull, adId: .nsNull, campaign: .nsNull,
+                adSet: .nsNull, adKeywords: .nsNull, ip: .nsNull)
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
+        expect(converted.count) == 0
+    }
+
     func testAppsFlyerAttributionConversionGivesPreferenceToAdIdOverRCNetworkID() {
-        let appsFlyerData = appsFlyerData(addAppsFlyerId: true, addNetworkID: true)
+        let appsFlyerData = appsFlyerData(appsFlyerId: .defaultValue, networkID: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
         expect(converted.count) != 0
@@ -129,13 +124,21 @@ class AttributionDataMigratorTests: XCTestCase {
             SpecialSubscriberAttributes.adGroup: AttributionKey.AppsFlyer.adSet.rawValue,
             SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue,
             SpecialSubscriberAttributes.keyword: AttributionKey.AppsFlyer.adKeywords.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adID.rawValue
+            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adId.rawValue
         ]
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
-    func testAppsFlyerAttributionConversionConvertsRCNetworkIDCorrectly() {
-        let appsFlyerData = appsFlyerData(addAppsFlyerId: false, addNetworkID: true)
+    func testAppsFlyerAttributionConversionRemovesNSNullRCNetworkID() {
+        let appsFlyerData = appsFlyerData(appsFlyerId: .notPresent, networkID: .nsNull)
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
+        expect(converted.count) != 0
+        expect(converted[SpecialSubscriberAttributes.appsFlyerID]).to(beNil())
+    }
+
+    func testAppsFlyerAttributionConversionUsesRCNetworkIDIfNoAppsFlyerID() {
+        let appsFlyerData = appsFlyerData(appsFlyerId: .notPresent, networkID: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
         expect(converted.count) != 0
@@ -147,49 +150,23 @@ class AttributionDataMigratorTests: XCTestCase {
             SpecialSubscriberAttributes.adGroup: AttributionKey.AppsFlyer.adSet.rawValue,
             SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue,
             SpecialSubscriberAttributes.keyword: AttributionKey.AppsFlyer.adKeywords.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adID.rawValue
+            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adId.rawValue
         ]
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
-    func testAppsFlyerAttributionConversionWorksWithNullIDFA() {
-        let appsFlyerData = appsFlyerData(withIDFA: nil)
+    func testAppsFlyerAttributionConversionWorksIfStandardKeysAreNotPassed() {
+        let appsFlyerData = appsFlyerData(withIDFA: .notPresent, appsFlyerId: .notPresent, networkID: .notPresent,
+                idfv: .notPresent, channel: .notPresent, mediaSource: .notPresent, ad: .notPresent,
+                adGroup: .notPresent, adId: .notPresent, campaign: .notPresent, adSet: .notPresent,
+                adKeywords: .notPresent, ip: .notPresent)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfa: nil)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.appsFlyerID: AttributionKey.AppsFlyer.id.rawValue,
-            SpecialSubscriberAttributes.mediaSource: AttributionKey.AppsFlyer.channel.rawValue,
-            SpecialSubscriberAttributes.campaign: AttributionKey.AppsFlyer.campaign.rawValue,
-            SpecialSubscriberAttributes.adGroup: AttributionKey.AppsFlyer.adSet.rawValue,
-            SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue,
-            SpecialSubscriberAttributes.keyword: AttributionKey.AppsFlyer.adKeywords.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adID.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
+        expect(converted.count) == 0
     }
 
-    func testAppsFlyerAttributionConversionWorksWithNullIDFV() {
-        let appsFlyerData = appsFlyerData(idfv: nil)
-        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
-                attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfv: nil)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.appsFlyerID: AttributionKey.AppsFlyer.id.rawValue,
-            SpecialSubscriberAttributes.mediaSource: AttributionKey.AppsFlyer.channel.rawValue,
-            SpecialSubscriberAttributes.campaign: AttributionKey.AppsFlyer.campaign.rawValue,
-            SpecialSubscriberAttributes.adGroup: AttributionKey.AppsFlyer.adSet.rawValue,
-            SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue,
-            SpecialSubscriberAttributes.keyword: AttributionKey.AppsFlyer.adKeywords.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adID.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
-    }
-
-    func testAppsFlyerAttributionConvertsMediaSourceIfThereIsOnlyMediaSourceAttribution() {
-        let appsFlyerData = appsFlyerData(addChannel: false, addMediaSource: true)
+    func testAppsFlyerAttributionConvertsMediaSourceAttribution() {
+        let appsFlyerData = appsFlyerData(channel: .notPresent, mediaSource: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
         expect(converted.count) != 0
@@ -201,8 +178,21 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
-    func testAppsFlyerAttributionConvertsMediaSourceIfThereIsChannelAndMediaSourceAttribution() {
-        let appsFlyerData = appsFlyerData(addChannel: true, addMediaSource: true)
+    func testAppsFlyerAttributionConvertsMediaSourceIfChannelIsNSNull() {
+        let appsFlyerData = appsFlyerData(channel: .nsNull, mediaSource: .defaultValue)
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
+        expect(converted.count) != 0
+        checkCommonAttributes(in: converted)
+        let expectedMapping = [
+            SpecialSubscriberAttributes.appsFlyerID: AttributionKey.AppsFlyer.id.rawValue,
+            SpecialSubscriberAttributes.mediaSource: AttributionKey.AppsFlyer.mediaSource.rawValue
+        ]
+        checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
+    }
+
+    func testAppsFlyerAttributionGivesPreferenceToChannelOverMediaSourceWhenConvertingMediaSourceSubscriberAttribute() {
+        let appsFlyerData = appsFlyerData(channel: .defaultValue, mediaSource: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
         expect(converted.count) != 0
@@ -214,8 +204,8 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
-    func testAppsFlyerAttributionConvertsMediaSourceIfThereIsOnlyChannelAttribution() {
-        let appsFlyerData = appsFlyerData(addChannel: true, addMediaSource: false)
+    func testAppsFlyerConversionUsesChannelAsMediaSourceSubscriberAttributeIfThereIsNoMediaSourceAttribution() {
+        let appsFlyerData = appsFlyerData(channel: .defaultValue, mediaSource: .notPresent)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
         expect(converted.count) != 0
@@ -227,8 +217,21 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
-    func testAppsFlyerAttributionConvertsAdIfThereIsOnlyAdGroupAttribution() {
-        let appsFlyerData = appsFlyerData(addAd: false, addAdGroup: true)
+    func testAppsFlyerConversionUsesChannelAsMediaSourceSubscriberAttributeIfMediaSourceAttributionIsNSNull() {
+        let appsFlyerData = appsFlyerData(channel: .defaultValue, mediaSource: .nsNull)
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
+        expect(converted.count) != 0
+        checkCommonAttributes(in: converted)
+        let expectedMapping = [
+            SpecialSubscriberAttributes.appsFlyerID: AttributionKey.AppsFlyer.id.rawValue,
+            SpecialSubscriberAttributes.mediaSource: AttributionKey.AppsFlyer.channel.rawValue
+        ]
+        checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
+    }
+
+    func testAppsFlyerAttributionConvertsAdGroupAttribution() {
+        let appsFlyerData = appsFlyerData(ad: .notPresent, adGroup: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
         expect(converted.count) != 0
@@ -240,8 +243,21 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
-    func testAppsFlyerAttributionConvertsAdIfThereIsAdAndAdGroupAttribution() {
-        let appsFlyerData = appsFlyerData(addAd: true, addAdGroup: true)
+    func testAppsFlyerAttributionConvertsAdGroupIfAdIsNSNull() {
+        let appsFlyerData = appsFlyerData(ad: .nsNull, adGroup: .defaultValue)
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
+        expect(converted.count) != 0
+        checkCommonAttributes(in: converted)
+        let expectedMapping = [
+            SpecialSubscriberAttributes.appsFlyerID: AttributionKey.AppsFlyer.id.rawValue,
+            SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.adGroup.rawValue
+        ]
+        checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
+    }
+
+    func testAppsFlyerAttributionGivesPreferenceToAdIfThereIsAdAndAdGroupAttributionWhenConvertingAdSubscriberAttribute() {
+        let appsFlyerData = appsFlyerData(ad: .defaultValue, adGroup: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
         expect(converted.count) != 0
@@ -253,8 +269,21 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
-    func testAppsFlyerAttributionConvertsAdIfThereIsOnlyAdAttribution() {
-        let appsFlyerData = appsFlyerData(addAd: true, addAdGroup: false)
+    func testAppsFlyerConversionUsesAdAsAdSubscriberAttributeIfThereIsNoAdGroupAttribution() {
+        let appsFlyerData = appsFlyerData(ad: .defaultValue, adGroup: .notPresent)
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
+        expect(converted.count) != 0
+        checkCommonAttributes(in: converted)
+        let expectedMapping = [
+            SpecialSubscriberAttributes.appsFlyerID: AttributionKey.AppsFlyer.id.rawValue,
+            SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue
+        ]
+        checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
+    }
+
+    func testAppsFlyerConversionUsesAdSubscriberAttributeIfAdGroupAttributionIsNSNull() {
+        let appsFlyerData = appsFlyerData(ad: .defaultValue, adGroup: .nsNull)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
         expect(converted.count) != 0
@@ -267,9 +296,9 @@ class AttributionDataMigratorTests: XCTestCase {
     }
 
     func testAppsFlyerAttributionIsProperlyConvertedIfInsideDataKeyInDictionary() {
-        var appsFlyerDataWithInnerJSON: [String: Any?]  = ["status": 1]
-        let appsFlyerData: [String: Any?]  = appsFlyerData()
-        var appsFlyerDataClean: [String: Any?] = [:]
+        var appsFlyerDataWithInnerJSON: [String: Any] = ["status": 1]
+        let appsFlyerData: [String: Any] = appsFlyerData()
+        var appsFlyerDataClean: [String: Any] = [:]
 
         for (key, value) in appsFlyerData {
             if key.starts(with: "rc_") {
@@ -292,15 +321,15 @@ class AttributionDataMigratorTests: XCTestCase {
             SpecialSubscriberAttributes.adGroup: AttributionKey.AppsFlyer.adSet.rawValue,
             SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue,
             SpecialSubscriberAttributes.keyword: AttributionKey.AppsFlyer.adKeywords.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adID.rawValue
+            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adId.rawValue
         ]
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
 
-    func testAppsFlyerAttributionIsProperlyConvertedIfInsideDataKeyInDictionaryAndUsesRCNetworkID() {
-        var appsFlyerDataWithInnerJSON: [String: Any?]  = ["status": 1]
-        let appsFlyerData: [String: Any?]  = appsFlyerData(addAppsFlyerId: false, addNetworkID: true)
-        var appsFlyerDataClean: [String: Any?] = [:]
+    func testAppsFlyerAttributionIsProperlyConvertedIfInsideDataKeyInDictionaryAndRCNetworkID() {
+        var appsFlyerDataWithInnerJSON: [String: Any] = ["status": 1]
+        let appsFlyerData: [String: Any] = appsFlyerData(appsFlyerId: .notPresent, networkID: .defaultValue)
+        var appsFlyerDataClean: [String: Any] = [:]
 
         for (key, value) in appsFlyerData {
             if key.starts(with: "rc_") {
@@ -323,7 +352,38 @@ class AttributionDataMigratorTests: XCTestCase {
             SpecialSubscriberAttributes.adGroup: AttributionKey.AppsFlyer.adSet.rawValue,
             SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue,
             SpecialSubscriberAttributes.keyword: AttributionKey.AppsFlyer.adKeywords.rawValue,
-            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adID.rawValue
+            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adId.rawValue
+        ]
+        checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
+    }
+
+    func testAppsFlyerAttributionIsProperlyConvertedIfInsideDataKeyInDictionaryAndAndAppsFlyerIsNull() {
+        var appsFlyerDataWithInnerJSON: [String: Any] = ["status": 1]
+        let appsFlyerData: [String: Any] = appsFlyerData(appsFlyerId: .nsNull, networkID: .defaultValue)
+        var appsFlyerDataClean: [String: Any] = [:]
+
+        for (key, value) in appsFlyerData {
+            if key.starts(with: "rc_") {
+                appsFlyerDataWithInnerJSON[key] = value
+            } else {
+                appsFlyerDataClean[key] = value
+            }
+        }
+
+        appsFlyerDataWithInnerJSON["data"] = appsFlyerDataClean
+
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: appsFlyerData, network: AttributionNetwork.RCAttributionNetworkAppsFlyer)
+        expect(converted.count) != 0
+        checkCommonAttributes(in: converted)
+        let expectedMapping = [
+            SpecialSubscriberAttributes.appsFlyerID: AttributionKey.networkID.rawValue,
+            SpecialSubscriberAttributes.mediaSource: AttributionKey.AppsFlyer.channel.rawValue,
+            SpecialSubscriberAttributes.campaign: AttributionKey.AppsFlyer.campaign.rawValue,
+            SpecialSubscriberAttributes.adGroup: AttributionKey.AppsFlyer.adSet.rawValue,
+            SpecialSubscriberAttributes.ad: AttributionKey.AppsFlyer.ad.rawValue,
+            SpecialSubscriberAttributes.keyword: AttributionKey.AppsFlyer.adKeywords.rawValue,
+            SpecialSubscriberAttributes.creative: AttributionKey.AppsFlyer.adId.rawValue
         ]
         checkConvertedAttributes(converted: converted, original: appsFlyerData, expectedMapping: expectedMapping)
     }
@@ -341,30 +401,20 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: branchData, expectedMapping: expectedMapping)
     }
 
-    func testBranchAttributionConversionWorksWithNullIDFA() {
-        let branchData = branchData(withIDFA: nil)
+    func testBranchAttributionConversionDiscardsNSNullValues() {
+        let branchData = branchData(withIDFA: .nsNull, idfv: .nsNull, ip: .nsNull, channel: .nsNull,
+                campaign: .nsNull)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: branchData, network: AttributionNetwork.RCAttributionNetworkBranch)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfa: nil)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.mediaSource: AttributionKey.Branch.channel.rawValue,
-            SpecialSubscriberAttributes.campaign: AttributionKey.Branch.campaign.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: branchData, expectedMapping: expectedMapping)
+        expect(converted.count) == 0
     }
 
-    func testBranchAttributionConversionWorksWithNullIDFV() {
-        let branchData = branchData(idfv: nil)
+    func testBranchAttributionConversionWorksIfStandardKeysAreNotPassed() {
+        let branchData = branchData(withIDFA: .notPresent, idfv: .notPresent, ip: .notPresent, channel: .notPresent,
+                campaign: .notPresent)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: branchData, network: AttributionNetwork.RCAttributionNetworkBranch)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfv: nil)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.mediaSource: AttributionKey.Branch.channel.rawValue,
-            SpecialSubscriberAttributes.campaign: AttributionKey.Branch.campaign.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: branchData, expectedMapping: expectedMapping)
+        expect(converted.count) == 0
     }
 
     func testTenjinAttributionIsConverted() {
@@ -375,20 +425,18 @@ class AttributionDataMigratorTests: XCTestCase {
         checkCommonAttributes(in: converted)
     }
 
-    func testTenjinAttributionConversionWorksWithNullIDFA() {
-        let tenjinData = facebookOrTenjinData(withIDFA: nil)
+    func testTenjinAttributionConversionDiscardsNSNullValues() {
+        let tenjinData = facebookOrTenjinData(withIDFA: .nsNull, idfv: .nsNull, ip: .nsNull)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: tenjinData, network: AttributionNetwork.RCAttributionNetworkTenjin)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfa: nil)
+        expect(converted.count) == 0
     }
 
-    func testTenjinAttributionConversionWorksWithNullIDFV() {
-        let tenjinData = facebookOrTenjinData(idfv: nil)
+    func testTenjinAttributionConversionWorksIfStandardKeysAreNotPassed() {
+        let tenjinData = facebookOrTenjinData(withIDFA: .notPresent, idfv: .notPresent, ip: .notPresent)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: tenjinData, network: AttributionNetwork.RCAttributionNetworkTenjin)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfv: nil)
+        expect(converted.count) == 0
     }
 
     func testFacebookAttributionIsConverted() {
@@ -399,20 +447,18 @@ class AttributionDataMigratorTests: XCTestCase {
         checkCommonAttributes(in: converted)
     }
 
-    func testFacebookAttributionConversionWorksWithNullIDFA() {
-        let facebookData = facebookOrTenjinData(withIDFA: nil)
+    func testFacebookAttributionConversionDiscardsNSNullValues() {
+        let facebookData = facebookOrTenjinData(withIDFA: .nsNull, idfv: .nsNull, ip: .nsNull)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: facebookData, network: AttributionNetwork.RCAttributionNetworkFacebook)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfa: nil)
+        expect(converted.count) == 0
     }
 
-    func testFacebookAttributionConversionWorksWithNullIDFV() {
-        let facebookData = facebookOrTenjinData(idfv: nil)
+    func testFacebookAttributionConversionWorksIfStandardKeysAreNotPassed() {
+        let facebookData = facebookOrTenjinData(withIDFA: .notPresent, idfv: .notPresent, ip: .notPresent)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: facebookData, network: AttributionNetwork.RCAttributionNetworkFacebook)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfv: nil)
+        expect(converted.count) == 0
     }
 
     func testMParticleAttributionIsConverted() {
@@ -427,20 +473,16 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: mparticleData, expectedMapping: expectedMapping)
     }
 
-    func testMParticleAttributionConversionGivesPreferenceToMParticleIdOverRCNetworkID() {
-        let mparticleData = mParticleData(addMParticleId: true, addNetworkID: true)
+    func testMParticleAttributionConversionDiscardsNSNullValues() {
+        let mparticleData = mParticleData(withIDFA: .nsNull, idfv: .nsNull, mParticleId: .nsNull, networkID: .nsNull,
+                ip: .nsNull)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
-                attributionData: mparticleData, network: AttributionNetwork.RCAttributionNetworkMParticle)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.mpParticleID: AttributionKey.MParticle.id.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: mparticleData, expectedMapping: expectedMapping)
+                attributionData: mparticleData, network: AttributionNetwork.RCAttributionNetworkAdjust)
+        expect(converted.count) == 0
     }
 
-    func testMParticleAttributionConversionConvertsRCNetworkIDCorrectly() {
-        let mparticleData = mParticleData(addMParticleId: false, addNetworkID: true)
+    func testMParticleAttributionConversionGivesPreferenceToRCNetworkIDOverMParticleId() {
+        let mparticleData = mParticleData(mParticleId: .defaultValue, networkID: .defaultValue)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: mparticleData, network: AttributionNetwork.RCAttributionNetworkMParticle)
         expect(converted.count) != 0
@@ -451,36 +493,43 @@ class AttributionDataMigratorTests: XCTestCase {
         checkConvertedAttributes(converted: converted, original: mparticleData, expectedMapping: expectedMapping)
     }
 
-    func testMParticleAttributionConversionWorksWithNullIDFA() {
-        let mparticleData = mParticleData(withIDFA: nil)
+    func testMParticleAttributionConversionRemovesNSNullRCNetworkID() {
+        let mparticleData = mParticleData(mParticleId: .notPresent, networkID: .nsNull)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
-                attributionData: mparticleData, network: AttributionNetwork.RCAttributionNetworkAdjust)
+                attributionData: mparticleData, network: AttributionNetwork.RCAttributionNetworkMParticle)
         expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfa: nil)
+        expect(converted[SpecialSubscriberAttributes.mpParticleID]).to(beNil())
+    }
+
+    func testMParticleAttributionConversionUsesMParticleIDIfNoRCNetworkID() {
+        let mparticleData = mParticleData(mParticleId: .defaultValue, networkID: .notPresent)
+        let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
+                attributionData: mparticleData, network: AttributionNetwork.RCAttributionNetworkMParticle)
+        expect(converted.count) != 0
         let expectedMapping = [
             SpecialSubscriberAttributes.mpParticleID: AttributionKey.MParticle.id.rawValue
         ]
         checkConvertedAttributes(converted: converted, original: mparticleData, expectedMapping: expectedMapping)
     }
 
-    func testMParticleAttributionConversionWorksWithNullIDFV() {
-        let mparticleData = mParticleData(idfv: nil)
+    func testMParticleAttributionConversionWorksIfStandardKeysAreNotPassed() {
+        let mparticleData = mParticleData(withIDFA: .notPresent, idfv: .notPresent, mParticleId: .notPresent,
+                networkID: .notPresent, ip: .notPresent)
         let converted = attributionDataMigrator.convertAttributionDataToSubscriberAttributes(
                 attributionData: mparticleData, network: AttributionNetwork.RCAttributionNetworkAdjust)
-        expect(converted.count) != 0
-        checkCommonAttributes(in: converted, expectedIdfv: nil)
-        let expectedMapping = [
-            SpecialSubscriberAttributes.mpParticleID: AttributionKey.MParticle.id.rawValue
-        ]
-        checkConvertedAttributes(converted: converted, original: mparticleData, expectedMapping: expectedMapping)
+        expect(converted.count) == 0
     }
+}
+
+private enum KeyPresence {
+    case defaultValue, nsNull, notPresent
 }
 
 private extension AttributionDataMigratorTests {
 
     func checkConvertedAttributes(
-            converted: [String: Any?],
-            original: [String: Any?],
+            converted: [String: Any],
+            original: [String: Any],
             expectedMapping: [String: String]
     ) {
         for (subscriberAttribute, attributionKey) in expectedMapping {
@@ -488,68 +537,86 @@ private extension AttributionDataMigratorTests {
         }
     }
 
-    func checkCommonAttributes(in converted: [String: Any?],
-                               expectedIdfa: String? = defaultIdfa,
-                               expectedIdfv: String? = defaultIdfv,
-                               expectedIP: String? = defaultIp,
-                               expectedGPSAdId: String? = defaultGPSAdId) {
-        if expectedIdfa == nil {
+    func checkCommonAttributes(in converted: [String: Any],
+                               idfa: KeyPresence = .defaultValue,
+                               idfv: KeyPresence = .defaultValue,
+                               ip: KeyPresence = .defaultValue) {
+        switch idfa {
+        case .defaultValue:
+            expect((converted[SpecialSubscriberAttributes.idfa] as! String)) == AttributionDataMigratorTests.defaultIdfa
+        case .nsNull:
+            expect(converted[SpecialSubscriberAttributes.idfa]).to(beAKindOf(NSNull.self))
+        case .notPresent:
             expect(converted[SpecialSubscriberAttributes.idfa]).to(beNil())
-        } else {
-            expect((converted[SpecialSubscriberAttributes.idfa] as! String)) == expectedIdfa
         }
-        if expectedIdfv == nil {
+        switch idfv {
+        case .defaultValue:
+            expect((converted[SpecialSubscriberAttributes.idfv] as! String)) == AttributionDataMigratorTests.defaultIdfv
+        case .nsNull:
+            expect(converted[SpecialSubscriberAttributes.idfv]).to(beAKindOf(NSNull.self))
+        case .notPresent:
             expect(converted[SpecialSubscriberAttributes.idfv]).to(beNil())
-        } else {
-            expect((converted[SpecialSubscriberAttributes.idfv] as! String)) == expectedIdfv
         }
-        if expectedIP == nil {
+        switch ip {
+        case .defaultValue:
+            expect((converted[SpecialSubscriberAttributes.ip] as! String)) == AttributionDataMigratorTests.defaultIp
+        case .nsNull:
+            expect(converted[SpecialSubscriberAttributes.ip]).to(beAKindOf(NSNull.self))
+        case .notPresent:
             expect(converted[SpecialSubscriberAttributes.ip]).to(beNil())
-        } else {
-            expect((converted[SpecialSubscriberAttributes.ip] as! String)) == expectedIP
-        }
-        if expectedGPSAdId == nil {
-            expect(converted[SpecialSubscriberAttributes.gpsAdId]).to(beNil())
-        } else {
-            expect((converted[SpecialSubscriberAttributes.gpsAdId] as! String)) == expectedGPSAdId
         }
     }
 
-    func adjustData(withIDFA idfa: String? = defaultIdfa,
-                    addAdId: Bool = true,
-                    addNetworkID: Bool = false,
-                    idfv: String? = defaultIdfv) -> [String: Any?] {
-        var adjustData: [String: Any?] = [
+    func adjustData(withIdfa idfa: KeyPresence = .defaultValue,
+                    adjustId: KeyPresence = .defaultValue,
+                    networkID: KeyPresence = .notPresent,
+                    idfv: KeyPresence = .defaultValue,
+                    ip: KeyPresence = .defaultValue,
+                    campaign: KeyPresence = .defaultValue,
+                    adGroup: KeyPresence = .defaultValue,
+                    creative: KeyPresence = .defaultValue,
+                    network: KeyPresence = .defaultValue) -> [String: Any] {
+        var data: [String: Any] = [
             "clickLabel": "clickey",
             "trackerToken": "6abc940",
-            "trackerName": "Instagram Profile::IG Spanish",
-            "\(AttributionKey.Adjust.campaign.rawValue)": "IG Spanish",
-            "\(AttributionKey.Adjust.adGroup.rawValue)": "an_ad_group",
-            "\(AttributionKey.Adjust.creative.rawValue)": "a_creative",
-            "\(AttributionKey.Adjust.network.rawValue)": "Instagram Profile",
-            "\(AttributionKey.gpsAdId.rawValue)": AttributionDataMigratorTests.defaultGPSAdId,
-            "\(AttributionKey.ip.rawValue)": AttributionDataMigratorTests.defaultIp,
-            "\(AttributionKey.idfa.rawValue)": idfa,
-            "\(AttributionKey.idfv.rawValue)": idfv
+            "trackerName": "Instagram Profile::IG Spanish"
         ]
-        if addAdId {
-            adjustData[AttributionKey.Adjust.id.rawValue] = "20f0c0000aca0b00000fb0000c0f0f00"
-        }
-        if addNetworkID {
-            adjustData[AttributionKey.networkID.rawValue] = "10f0c0000aca0b00000fb0000c0f0f00"
-        }
-        return adjustData
+
+        function(keyPresence: idfa, data: &data, key: AttributionKey.idfa.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfa)
+        function(keyPresence: idfv, data: &data, key: AttributionKey.idfv.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfv)
+        function(keyPresence: adjustId, data: &data, key: AttributionKey.Adjust.id.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultNetworkId)
+        function(keyPresence: networkID, data: &data, key: AttributionKey.networkID.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultRCNetworkId)
+        function(keyPresence: ip, data: &data, key: AttributionKey.ip.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIp)
+        function(keyPresence: campaign, data: &data, key: AttributionKey.Adjust.campaign.rawValue,
+                defaultValue: "IG Spanish")
+        function(keyPresence: adGroup, data: &data, key: AttributionKey.Adjust.adGroup.rawValue,
+                defaultValue: "an_ad_group")
+        function(keyPresence: creative, data: &data, key: AttributionKey.Adjust.creative.rawValue,
+                defaultValue: "a_creative")
+        function(keyPresence: network, data: &data, key: AttributionKey.Adjust.network.rawValue,
+                defaultValue: "Instagram Profile")
+        return data
     }
 
-    func appsFlyerData(withIDFA idfa: String? = defaultIdfa,
-                       addAppsFlyerId: Bool = true,
-                       addNetworkID: Bool = false,
-                       idfv: String? = defaultIdfv,
-                       addChannel: Bool = true,
-                       addMediaSource: Bool = false,
-                       addAd: Bool = true,
-                       addAdGroup: Bool = false) -> [String: Any?] {
-        var appsFlyerData: [String: Any?] = [
+    func appsFlyerData(withIDFA idfa: KeyPresence = .defaultValue,
+                       appsFlyerId: KeyPresence = .defaultValue,
+                       networkID: KeyPresence = .notPresent,
+                       idfv: KeyPresence = .defaultValue,
+                       channel: KeyPresence = .defaultValue,
+                       mediaSource: KeyPresence = .notPresent,
+                       ad: KeyPresence = .defaultValue,
+                       adGroup: KeyPresence = .notPresent,
+                       adId: KeyPresence = .defaultValue,
+                       campaign: KeyPresence = .defaultValue,
+                       adSet: KeyPresence = .defaultValue,
+                       adKeywords: KeyPresence = .defaultValue,
+                       ip: KeyPresence = .defaultValue) -> [String: Any] {
+        var data: [String: Any] = [
             "adset_id": "23847301359550211",
             "campaign_id": "23847301359200211",
             "click_time": "2021-05-04 18:08:51.000",
@@ -557,84 +624,109 @@ private extension AttributionDataMigratorTests {
             "adgroup_id": "238473013556789090",
             "is_mobile_data_terms_signed": true,
             "match_type": "srn",
-            "agency": nil,
+            "agency": NSNull(),
             "retargeting_conversion_type": "none",
             "install_time": "2021-05-04 18:20:45.050",
             "af_status": "Non-organic",
-            "http_referrer": nil,
+            "http_referrer": NSNull(),
             "is_paid": true,
             "is_first_launch": false,
             "is_fb": true,
-            "af_siteid": nil,
-            "af_message": "organic install",
-            "\(AttributionKey.AppsFlyer.adID.rawValue)": "23847301457860211",
-            "\(AttributionKey.AppsFlyer.campaign.rawValue)": "0111 - mm - aaa - US - best creo 10 - Copy",
-            "\(AttributionKey.AppsFlyer.adSet.rawValue)": "0005 - tm - aaa - US - best 8",
-            "\(AttributionKey.AppsFlyer.adKeywords.rawValue)": "keywords for ad",
-            "\(AttributionKey.gpsAdId.rawValue)": AttributionDataMigratorTests.defaultGPSAdId,
-            "\(AttributionKey.ip.rawValue)": AttributionDataMigratorTests.defaultIp,
-            "\(AttributionKey.idfa.rawValue)": idfa,
-            "\(AttributionKey.idfv.rawValue)": idfv
+            "af_siteid": NSNull(),
+            "af_message": "organic install"
         ]
-        if addAppsFlyerId {
-            appsFlyerData[AttributionKey.AppsFlyer.id.rawValue] = "110116141-131918411"
-        }
-        if addNetworkID {
-            appsFlyerData[AttributionKey.networkID.rawValue] = "10f0c0000aca0b00000fb0000c0f0f00"
-        }
-        if addChannel {
-            appsFlyerData[AttributionKey.AppsFlyer.channel.rawValue] = "Facebook"
-        }
-        if addMediaSource {
-            appsFlyerData[AttributionKey.AppsFlyer.mediaSource.rawValue] = "Facebook Ads"
-        }
-        if addAd {
-            appsFlyerData[AttributionKey.AppsFlyer.ad.rawValue] = "ad.mp4"
-        }
-        if addAdGroup {
-            appsFlyerData[AttributionKey.AppsFlyer.adGroup.rawValue] = "1111 - tm - aaa - US - 999 v1"
-        }
-        return appsFlyerData
+        function(keyPresence: idfa, data: &data, key: AttributionKey.idfa.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfa)
+        function(keyPresence: idfv, data: &data, key: AttributionKey.idfv.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfv)
+        function(keyPresence: appsFlyerId, data: &data, key: AttributionKey.AppsFlyer.id.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultNetworkId)
+        function(keyPresence: networkID, data: &data, key: AttributionKey.networkID.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultRCNetworkId)
+        function(keyPresence: channel, data: &data, key: AttributionKey.AppsFlyer.channel.rawValue,
+                defaultValue: "Facebook")
+        function(keyPresence: mediaSource, data: &data, key: AttributionKey.AppsFlyer.mediaSource.rawValue,
+                defaultValue: "Facebook Ads")
+        function(keyPresence: ad, data: &data, key: AttributionKey.AppsFlyer.ad.rawValue,
+                defaultValue: "ad.mp4")
+        function(keyPresence: adGroup, data: &data, key: AttributionKey.AppsFlyer.adGroup.rawValue,
+                defaultValue: "1111 - tm - aaa - US - 999 v1")
+        function(keyPresence: adId, data: &data, key: AttributionKey.AppsFlyer.adId.rawValue,
+                defaultValue: "23847301457860211")
+        function(keyPresence: campaign, data: &data, key: AttributionKey.AppsFlyer.campaign.rawValue,
+                defaultValue: "0111 - mm - aaa - US - best creo 10 - Copy")
+        function(keyPresence: adSet, data: &data, key: AttributionKey.AppsFlyer.adSet.rawValue,
+                defaultValue: "0005 - tm - aaa - US - best 8")
+        function(keyPresence: adKeywords, data: &data, key: AttributionKey.AppsFlyer.adKeywords.rawValue,
+                defaultValue: "keywords for ad")
+        function(keyPresence: ip, data: &data, key: AttributionKey.ip.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIp)
+        return data
     }
 
-    func branchData(withIDFA idfa: String? = defaultIdfa, idfv: String? = defaultIdfv) -> [String: Any?] {
-        [
+    func branchData(withIDFA idfa: KeyPresence = .defaultValue,
+                    idfv: KeyPresence = .defaultValue,
+                    ip: KeyPresence = .defaultValue,
+                    channel: KeyPresence = .defaultValue,
+                    campaign: KeyPresence = .defaultValue) -> [String: Any] {
+        var data: [String: Any] = [
             "+is_first_session": false,
-            "+clicked_branch_link": false,
-            "\(AttributionKey.Branch.channel.rawValue)": "Facebook",
-            "\(AttributionKey.Branch.campaign.rawValue)": "Facebook Ads 01293",
-            "\(AttributionKey.ip.rawValue)": AttributionDataMigratorTests.defaultIp,
-            "\(AttributionKey.gpsAdId.rawValue)": AttributionDataMigratorTests.defaultGPSAdId,
-            "\(AttributionKey.idfa.rawValue)": idfa,
-            "\(AttributionKey.idfv.rawValue)": idfv
+            "+clicked_branch_link": false
         ]
+        function(keyPresence: idfa, data: &data, key: AttributionKey.idfa.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfa)
+        function(keyPresence: idfv, data: &data, key: AttributionKey.idfv.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfv)
+        function(keyPresence: ip, data: &data, key: AttributionKey.ip.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIp)
+        function(keyPresence: channel, data: &data, key: AttributionKey.Branch.channel.rawValue,
+                defaultValue: "Facebook")
+        function(keyPresence: campaign, data: &data, key: AttributionKey.Branch.campaign.rawValue,
+                defaultValue: "Facebook Ads 01293")
+
+        return data
     }
 
-    func mParticleData(withIDFA idfa: String? = defaultIdfa,
-                       idfv: String? = defaultIdfv,
-                       addMParticleId: Bool = true,
-                       addNetworkID: Bool = false) -> [String: Any?] {
-        var mParticleData: [String: Any?] = [
-            "\(AttributionKey.ip.rawValue)": AttributionDataMigratorTests.defaultIp,
-            "\(AttributionKey.idfa.rawValue)": idfa,
-            "\(AttributionKey.gpsAdId.rawValue)": AttributionDataMigratorTests.defaultGPSAdId,
-            "\(AttributionKey.idfv.rawValue)": idfv
-        ]
-        if addMParticleId {
-            mParticleData[AttributionKey.MParticle.id.rawValue] = "-2579252457900000000"
-        }
-        if addNetworkID {
-            mParticleData[AttributionKey.networkID.rawValue] = "10f0c0000aca0b00000fb0000c0f0f00"
-        }
-        return mParticleData
+    func mParticleData(withIDFA idfa: KeyPresence = .defaultValue,
+                       idfv: KeyPresence = .defaultValue,
+                       mParticleId: KeyPresence = .defaultValue,
+                       networkID: KeyPresence = .notPresent,
+                       ip: KeyPresence = .defaultValue) -> [String: Any] {
+        var data: [String: Any] = [:]
+
+        function(keyPresence: idfa, data: &data, key: AttributionKey.idfa.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfa)
+        function(keyPresence: idfv, data: &data, key: AttributionKey.idfv.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfv)
+        function(keyPresence: mParticleId, data: &data, key: AttributionKey.MParticle.id.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultNetworkId)
+        function(keyPresence: networkID, data: &data, key: AttributionKey.networkID.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultRCNetworkId)
+        function(keyPresence: ip, data: &data, key: AttributionKey.ip.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIp)
+        return data
     }
 
-    func facebookOrTenjinData(withIDFA idfa: String? = defaultIdfa, idfv: String? = defaultIdfv) -> [String: Any?] {
-        [
-            "\(AttributionKey.ip.rawValue)": AttributionDataMigratorTests.defaultIp,
-            "\(AttributionKey.gpsAdId.rawValue)": AttributionDataMigratorTests.defaultGPSAdId,
-            "\(AttributionKey.idfa.rawValue)": idfa,
-            "\(AttributionKey.idfv.rawValue)": idfv
-        ]
+    func facebookOrTenjinData(withIDFA idfa: KeyPresence = .defaultValue,
+                              idfv: KeyPresence = .defaultValue, ip: KeyPresence = .defaultValue) -> [String: Any] {
+        var data: [String: Any] = [:]
+        function(keyPresence: idfa, data: &data, key: AttributionKey.idfa.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfa)
+        function(keyPresence: idfv, data: &data, key: AttributionKey.idfv.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIdfv)
+        function(keyPresence: ip, data: &data, key: AttributionKey.ip.rawValue,
+                defaultValue: AttributionDataMigratorTests.defaultIp)
+        return data
+    }
+
+    private func function(keyPresence: KeyPresence, data: inout [String: Any], key: String, defaultValue: String) {
+        switch keyPresence {
+        case .defaultValue:
+            data[key] = defaultValue
+        case .nsNull:
+            data[key] = NSNull()
+        case .notPresent:
+            break
+        }
     }
 }

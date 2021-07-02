@@ -24,7 +24,7 @@ internal enum AttributionKey: String {
              ad = "af_ad",
              adGroup = "adgroup",
              adKeywords = "af_keywords",
-             adID = "ad_id",
+             adId = "ad_id",
              dataKey = "data",
              statusKey = "status"
     }

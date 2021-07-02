@@ -8,12 +8,13 @@
 
 import Foundation
 
-internal class AttributionDataMigrator: NSObject {
+@objc(RCAttributionDataMigrator) public class AttributionDataMigrator: NSObject {
 
-    func convertAttributionDataToSubscriberAttributes(
-            attributionData: [String: Any?], network: AttributionNetwork
-    ) -> [String: Any?] {
-        var convertedAttribution: [String: Any?] = [:]
+    @objc public func convertAttributionDataToSubscriberAttributes(
+            attributionData: [String: Any], network: AttributionNetwork
+    ) -> [String: Any] {
+        let attributionData = attributionData.filter { !($0.1 is NSNull) }
+        var convertedAttribution: [String: Any] = [:]
         if let value = attributionData[AttributionKey.idfa.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.idfa] = value
         }
@@ -26,20 +27,21 @@ internal class AttributionDataMigrator: NSObject {
         if let value = attributionData[AttributionKey.gpsAdId.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.gpsAdId] = value
         }
-        let networkSpecificSubscriberAttributes: [String: Any?]
+        let networkSpecificSubscriberAttributes: [String: Any]
         switch network {
-        case .RCAttributionNetworkAppleSearchAds:
-            networkSpecificSubscriberAttributes = convertAppleSearchAdsAttribution(attributionData)
-        case .RCAttributionNetworkAdjust:
-            networkSpecificSubscriberAttributes = convertAdjustAttribution(attributionData)
-        case .RCAttributionNetworkAppsFlyer:
-            networkSpecificSubscriberAttributes = convertAppsFlyerAttribution(attributionData)
-        case .RCAttributionNetworkBranch:
-            networkSpecificSubscriberAttributes = convertBranchAttribution(attributionData)
-        case .RCAttributionNetworkTenjin,
-             .RCAttributionNetworkFacebook:
+        case .appleSearchAds:
+            // Apple Search Ads uses standard attribution system
             networkSpecificSubscriberAttributes = [:]
-        case .RCAttributionNetworkMParticle:
+        case .adjust:
+            networkSpecificSubscriberAttributes = convertAdjustAttribution(attributionData)
+        case .appsFlyer:
+            networkSpecificSubscriberAttributes = convertAppsFlyerAttribution(attributionData)
+        case .branch:
+            networkSpecificSubscriberAttributes = convertBranchAttribution(attributionData)
+        case .tenjin,
+             .facebook:
+            networkSpecificSubscriberAttributes = [:]
+        case .mParticle:
             networkSpecificSubscriberAttributes = convertMParticleAttribution(attributionData)
         }
         return convertedAttribution.merging(networkSpecificSubscriberAttributes) { (_, new) -> Any? in
@@ -47,19 +49,23 @@ internal class AttributionDataMigrator: NSObject {
         }
     }
 
-    private func convertMParticleAttribution(_ data: [String: Any?]) -> [String: Any?] {
-        var convertedAttribution: [String: Any?] = [:]
-        if let value = data[AttributionKey.networkID.rawValue] {
+}
+
+private extension AttributionDataMigrator {
+
+    func convertMParticleAttribution(_ data: [String: Any]) -> [String: Any] {
+        var convertedAttribution: [String: Any] = [:]
+        if let value = data[AttributionKey.MParticle.id.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.mpParticleID] = value
         }
-        if let value = data[AttributionKey.MParticle.id.rawValue] {
+        if let value = data[AttributionKey.networkID.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.mpParticleID] = value
         }
         return convertedAttribution
     }
 
-    private func convertBranchAttribution(_ data: [String: Any?]) -> [String: Any?] {
-        var convertedAttribution: [String: Any?] = [:]
+    func convertBranchAttribution(_ data: [String: Any]) -> [String: Any] {
+        var convertedAttribution: [String: Any] = [:]
         if let value = data[AttributionKey.Branch.channel.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.mediaSource] = value
         }
@@ -69,7 +75,7 @@ internal class AttributionDataMigrator: NSObject {
         return convertedAttribution
     }
 
-    private func convertAppsFlyerAttribution(_ data: [String: Any?]) -> [String: Any?] {
+    func convertAppsFlyerAttribution(_ data: [String: Any]) -> [String: Any] {
         var fixedData = data
         if let innerDataObject = fixedData[AttributionKey.AppsFlyer.dataKey.rawValue] as? [String: Any?] {
             if fixedData[AttributionKey.AppsFlyer.statusKey.rawValue] != nil {
@@ -79,7 +85,7 @@ internal class AttributionDataMigrator: NSObject {
             }
         }
 
-        var convertedAttribution: [String: Any?] = [:]
+        var convertedAttribution: [String: Any] = [:]
 
         if let value = fixedData[AttributionKey.networkID.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.appsFlyerID] = value
@@ -108,18 +114,15 @@ internal class AttributionDataMigrator: NSObject {
         if let value = fixedData[AttributionKey.AppsFlyer.adKeywords.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.keyword] = value
         }
-        if let value = fixedData[AttributionKey.AppsFlyer.adID.rawValue] {
+        if let value = fixedData[AttributionKey.AppsFlyer.adId.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.creative] = value
         }
 
         return convertedAttribution
     }
 
-    private func convertAdjustAttribution(_ data: [String: Any?]) -> [String: Any?] {
-        var convertedAttribution: [String: Any?] = [:]
-        if let value = data[AttributionKey.networkID.rawValue] {
-            convertedAttribution[SpecialSubscriberAttributes.adjustID] = value
-        }
+    func convertAdjustAttribution(_ data: [String: Any]) -> [String: Any] {
+        var convertedAttribution: [String: Any] = [:]
         if let value = data[AttributionKey.Adjust.id.rawValue] {
             convertedAttribution[SpecialSubscriberAttributes.adjustID] = value
         }
@@ -136,9 +139,5 @@ internal class AttributionDataMigrator: NSObject {
             convertedAttribution[SpecialSubscriberAttributes.creative] = value
         }
         return convertedAttribution
-    }
-
-    private func convertAppleSearchAdsAttribution(_ data: [String: Any?]) -> [String: Any?] {
-        return [:]
     }
 }

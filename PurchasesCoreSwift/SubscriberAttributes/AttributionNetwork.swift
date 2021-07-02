@@ -8,33 +8,33 @@
 
 import Foundation
 
-enum AttributionNetwork: Int {
+@objc(RCAttributionNetwork) public enum AttributionNetwork: Int {
     /**
      Apple's search ads
      */
-    case RCAttributionNetworkAppleSearchAds = 0,
+    case appleSearchAds = 0,
         /**
          Adjust https://www.adjust.com/
          */
-         RCAttributionNetworkAdjust,
+         adjust,
         /**
          AppsFlyer https://www.appsflyer.com/
          */
-         RCAttributionNetworkAppsFlyer,
+         appsFlyer,
         /**
          Branch https://www.branch.io/
          */
-         RCAttributionNetworkBranch,
+         branch,
         /**
          Tenjin https://www.tenjin.io/
          */
-         RCAttributionNetworkTenjin,
+         tenjin,
         /**
          Facebook https://developers.facebook.com/
          */
-         RCAttributionNetworkFacebook,
+         facebook,
         /**
         mParticle https://www.mparticle.com/
         */
-         RCAttributionNetworkMParticle
-};
+         mParticle
+}

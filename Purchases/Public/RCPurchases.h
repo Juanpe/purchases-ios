@@ -8,8 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "RCAttributionNetwork.h"
 #import "RCLogLevel.h"
+@import PurchasesCoreSwift;
 
 @class SKProduct, SKPayment, SKPaymentTransaction, SKPaymentDiscount, SKProductDiscount, RCPurchaserInfo, RCIntroEligibility, RCOfferings, RCOffering, RCPackage;
 @protocol RCPurchasesDelegate;

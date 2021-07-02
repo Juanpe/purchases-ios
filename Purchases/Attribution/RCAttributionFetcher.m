@@ -26,6 +26,7 @@ static NSMutableArray<RCAttributionData *> *_Nullable postponedAttributionData;
 @property (strong, nonatomic) RCBackend *backend;
 @property (strong, nonatomic) RCAttributionTypeFactory *attributionFactory;
 @property (strong, nonatomic) RCSystemInfo *systemInfo;
+@property (strong, nonatomic) RCAttributionDataMigrator *attributionDataMigrator;
 
 @end
 
@@ -35,13 +36,15 @@ static NSMutableArray<RCAttributionData *> *_Nullable postponedAttributionData;
                     identityManager:(RCIdentityManager *)identityManager
                             backend:(RCBackend *)backend
                  attributionFactory:(RCAttributionTypeFactory *)attributionFactory
-                         systemInfo:(RCSystemInfo *)systemInfo {
+                         systemInfo:(RCSystemInfo *)systemInfo
+            attributionDataMigrator:(RCAttributionDataMigrator *)attributionDataMigrator{
     if (self = [super init]) {
         self.deviceCache = deviceCache;
         self.identityManager = identityManager;
         self.backend = backend;
         self.attributionFactory = attributionFactory;
         self.systemInfo = systemInfo;
+        self.attributionDataMigrator = attributionDataMigrator;
     }
     return self;
 }
@@ -117,15 +120,22 @@ static NSMutableArray<RCAttributionData *> *_Nullable postponedAttributionData;
         newData[@"rc_attribution_network_id"] = networkUserId;
 
         if (newData.count > 0) {
-            [self.backend postAttributionData:newData
-                                  fromNetwork:network
-                                 forAppUserID:appUserID
-                                   completion:^(NSError *_Nullable error) {
-                                       if (error == nil) {
-                                           [self.deviceCache setLatestNetworkAndAdvertisingIdsSent:newDictToCache
-                                                                                      forAppUserID:appUserID];
-                                       }
-                                   }];
+            if (network == RCAttributionNetworkAppleSearchAds) {
+                [self.backend postAttributionData:newData
+                                      fromNetwork:network
+                                     forAppUserID:appUserID
+                                       completion:^(NSError *_Nullable error) {
+                                           if (error == nil) {
+                                               [self.deviceCache setLatestNetworkAndAdvertisingIdsSent:newDictToCache
+                                                                                          forAppUserID:appUserID];
+                                           }
+                                       }];
+            } else {
+                [self.attributionDataMigrator convertAttributionDataToSubscriberAttributesWithAttributionData:newData
+                                                                                                      network:network];
+                [self.deviceCache setLatestNetworkAndAdvertisingIdsSent:newDictToCache
+                                                           forAppUserID:appUserID];
+            }
         }
     }
 }

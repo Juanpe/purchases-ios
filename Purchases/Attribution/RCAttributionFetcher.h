@@ -13,8 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class RCDeviceCache, RCIdentityManager, RCBackend, RCAttributionData;
-@class RCSystemInfo;
+@class RCDeviceCache, RCIdentityManager, RCBackend, RCAttributionData, RCSystemInfo, RCAttributionDataMigrator;
 
 
 @interface RCAttributionFetcher : NSObject
